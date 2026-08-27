@@ -31,7 +31,7 @@ jobs:
           fi
           python3 gt_seat_watch.py \
             --ntfy "$NTFY_TOPIC" \
-            --crns 89609 89589 90837 92377 91376 84183 83558\
+            --crns 89609 89589 90837 92377 91376 84183 83558 84615\
             --term 202608 \
             --interval 15 \
             --duration 275 \
