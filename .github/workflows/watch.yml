@@ -1,0 +1,50 @@
+name: GT seat watch
+
+on:
+  schedule:
+    - cron: "*/5 * * * *"
+  workflow_dispatch:
+
+concurrency:
+  group: seat-watch
+  cancel-in-progress: false
+
+jobs:
+  watch:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Watch for open seats
+        env:
+          NTFY_TOPIC: ${{ secrets.NTFY_TOPIC }}
+        run: |
+          if [ -z "$NTFY_TOPIC" ]; then
+            echo "::error::NTFY_TOPIC secret is not set - no alerts would reach your phone."
+            exit 1
+          fi
+          python3 gt_seat_watch.py \
+            --ntfy "$NTFY_TOPIC" \
+            --crns 89609 89589 93197 \
+            --term 202608 \
+            --interval 15 \
+            --duration 275 \
+            --no-local \
+            --quiet-start
+
+      - name: Tell me if the watcher itself broke
+        if: failure()
+        env:
+          NTFY_TOPIC: ${{ secrets.NTFY_TOPIC }}
+        run: |
+          curl -s -H "Title: GT watcher run FAILED" \
+                  -H "Priority: high" \
+                  -H "Tags: warning" \
+                  -d "A scheduled run errored. Check https://github.com/${{ github.repository }}/actions" \
+                  "https://ntfy.sh/$NTFY_TOPIC" || true
